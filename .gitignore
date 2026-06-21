@@ -1,0 +1,16 @@
+# ESP-IDF Build Artifacts
+build/
+sdkconfig.old
+
+# Visual Studio & VS Code Caches
+.vs/
+.vscode/
+cmake.db
+CMakeWorkspaceSettings.json
+CMakeSettings.json
+*.slnx
+*.sqlite
+
+# Compiler/LSP configurations
+.clangd/
+.clangd

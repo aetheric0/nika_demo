@@ -33,7 +33,7 @@ struct PingPongWorkspace_t
 
 static PingPongWorkspace_t g_workspace;
 
-// Semaphore: Wakes the analytics taks when a buffer is full
+// Semaphore: Wakes the analytics task when a buffer is full
 static SemaphoreHandle_t g_buffer_full_sem = nullptr;
 
 // Timer handle

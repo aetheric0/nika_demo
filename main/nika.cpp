@@ -23,6 +23,6 @@ extern "C" void app_main(void)
     while (true)
     {
         vTaskDelay(pdMS_TO_TICKS(5000));
-        ESP_LOGI(TAG, "System operational hearbeat check, free heap: %u bytes", esp_get_free_heap_size());
+        ESP_LOGI(TAG, "System operational heartbeat check, free heap: %u bytes", esp_get_free_heap_size());
     }
 }

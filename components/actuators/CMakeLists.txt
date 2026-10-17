@@ -1,4 +1,4 @@
 idf_component_register(
-    SRCS ""
+    SRCS "nika_actuation.cpp" ""
     INCLUDE_DIRS "include"
 )

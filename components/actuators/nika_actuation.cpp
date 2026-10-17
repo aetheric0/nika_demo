@@ -19,16 +19,16 @@ static const char *TAG = "NIKA_ACTUATION";
 #define GPIO_STATUS_LED     GPIO_NUM_2
 
 // Electrical Safety Boundaries
-#define THRESHOLD_OVERCURRENT_RMS        15.0f       // Amperes (Short Circuit / Mechanical Jam)
-#define THRESHOLD_UNDERCURRENT_RMS        0.8f       // Amps (Dry Run / Broken Drive Belt)
-#define THRESHOLD_OVERVOLTAGE_RMS       265.0f      // Volts (Grid Spike)
-#define THRESHOLD_UNDERVOLTAGE_RMS      185.0f      // Volts (Grid Brownout)
-#define THRESHOLD_THD_MAX                 8.0f      // Percent (Distortion limit)
-#define THRESHOLD_PF_MIN                  0.75f     // Power Factor limit
+#define THRESHOLD_OVERCURRENT_RMS        15.0f          // Amperes (Short Circuit / Mechanical Jam)
+#define THRESHOLD_UNDERCURRENT_RMS        0.8f          // Amps (Dry Run / Broken Drive Belt)
+#define THRESHOLD_OVERVOLTAGE_RMS       265.0f          // Volts (Grid Spike)
+#define THRESHOLD_UNDERVOLTAGE_RMS      185.0f          // Volts (Grid Brownout)
+#define THRESHOLD_THD_MAX                 8.0f          // Percent (Distortion limit)
+#define THRESHOLD_PF_MIN                  0.75f         // Power Factor limit
 
 // Timing & Persistence Controls
-#define FAULT_PERSISTENCE_LIMIT     2           // Consecutive buffer trips required
-#define RECLOSE_SAFETY_DELAY_US     (10 * 1000 * 1000) // 10 seconds in microseconds
+#define FAULT_PERSISTENCE_LIMIT     2                   // Consecutive buffer trips required
+#define RECLOSE_SAFETY_DELAY_US     (10 * 1000 * 1000)  // 10 seconds in microseconds
 
 // =========================================================
 // SYSTEM STATES & ENUMS
@@ -38,7 +38,9 @@ typedef enum {
     FAULT_UNDERVOLTAGE = 1,
     FAULT_OVERVOLTAGE = 2,
     FAULT_OVERCURRENT = 3,
-    FAULT_THD_WARNING = 4
+    FAULT_THD_WARNING = 4,
+    FAULT_LOW_PF = 5,
+    FAULT_UNDERCURRENT = 6
 } FaultType_t;
 
 typedef enum {
@@ -52,7 +54,7 @@ typedef enum {
 static SystemState_t g_system_state = STATE_OPERATIONAL;
 static uint8_t g_fault_counter = 0;
 static FaultType_t g_active_fault = SYSTEM_HEALTHY;
-static int64_t g_recovery_state_time_us = 0;
+static int64_t g_recovery_start_time_us = 0;
 
 // =========================================================
 // ESP-IDF GPIO DRIVER INITIALIZATION
@@ -65,7 +67,7 @@ esp_err_t nika_actuation_init(void) {
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
         .intr_type = GPIO_INTR_DISABLE
-    }
+    };
     ESP_ERROR_CHECK(gpio_config(&relay_conf));
     gpio_set_level(GPIO_RELAY_TRIP, 0);
 
@@ -76,17 +78,17 @@ esp_err_t nika_actuation_init(void) {
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE
-    }
+    };
     ESP_ERROR_CHECK(gpio_config(&led_conf));
     gpio_set_level(GPIO_STATUS_LED, 1);
 
-    gpio_config_t btc_conf = {
+    gpio_config_t btn_conf = {
         .pin_bit_mask = (1ULL << GPIO_MANUAL_RESET),
-        .mode = GPI0_MODE_INPUT,
+        .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE
     };
-    ESP_ERROR_CHECK(gpio_Config(&btn_conf));
+    ESP_ERROR_CHECK(gpio_config(&btn_conf));
 
     ESP_LOGI(
         TAG,
@@ -127,7 +129,7 @@ static void clear_hardware_trip(void) {
 // =========================================================
 // ESP-IDF DETERMINSTIC EVALUATION LOOP
 // =========================================================
-void nika_evaluate_and_actuate(float v_rms, float i_rms, float power_factor) {
+void nika_evaluate_and_actuate(float v_rms, float i_rms, float power_factor, float thd) {
     FaultType_t current_evaluation = SYSTEM_HEALTHY;
 
     // 1. Evaluate Primary Hardware Limits
@@ -156,7 +158,7 @@ void nika_evaluate_and_actuate(float v_rms, float i_rms, float power_factor) {
             if (current_evaluation != SYSTEM_HEALTHY) {
                 // Immediate trip for extreme overcurrent (> 2x threshold)
                 if (current_evaluation == FAULT_OVERCURRENT && i_rms > (THRESHOLD_OVERCURRENT_RMS * 2.0f)) {
-                    trigger_harware_trip(current_evaluation); 
+                    trigger_hardware_trip(current_evaluation); 
                 } else {
                     g_fault_counter++;
                     g_system_state = STATE_PERSISTENCE_EVAL;
@@ -183,16 +185,16 @@ void nika_evaluate_and_actuate(float v_rms, float i_rms, float power_factor) {
                 if (gpio_get_level(GPIO_MANUAL_RESET) == 0) {
                     vTaskDelay(pdMS_TO_TICKS(50));
                     if (gpio_get_level(GPIO_MANUAL_RESET) == 0) {
-                        ESP_LOGW(TAG, "[HITL] Manual Reset Verified by Technician Button Press.")
+                        ESP_LOGW(TAG, "[HITL] Manual Reset Verified by Technician Button Press.");
                         clear_hardware_trip();
                     }
                 }
             }
 
             // VOLTAGE FAULTS allow auto-recovery using native esp_timer
-            else if (g_active_fault = FAULT_UNDERVOLTAGE || g_active_fault == FAULT_OVERVOLTAGE) {
+            else if (g_active_fault == FAULT_UNDERVOLTAGE || g_active_fault == FAULT_OVERVOLTAGE) {
                 if (current_evaluation == SYSTEM_HEALTHY) {
-                    ESP_LOGI(TAG, "Voltage stabilized. Starting ESP-IDF")
+                    ESP_LOGI(TAG, "Voltage stabilized. Starting ESP-IDF");
                     g_recovery_start_time_us = esp_timer_get_time();
                     g_system_state = STATE_RECOVERY_COOLING;
                 }
@@ -200,11 +202,11 @@ void nika_evaluate_and_actuate(float v_rms, float i_rms, float power_factor) {
             break;
 
         case STATE_RECOVERY_COOLING:
-            IF (current_evaluation != SYSTEM_HEALTHY) {
+            if (current_evaluation != SYSTEM_HEALTHY) {
                 // Voltage relapsed during recovery window
                 g_recovery_start_time_us = 0;
                 g_system_state = STATE_TRIPPED_LOCKED;
-                ESP_LOGW(TAG, "Voltage relapsed during cooling. Relocking interlock.")   
+                ESP_LOGW(TAG, "Voltage relapsed during cooling. Relocking interlock.")   ;
             } else if ((esp_timer_get_time() - g_recovery_start_time_us) >= RECLOSE_SAFETY_DELAY_US) {
                 ESP_LOGI(TAG, "Grid stable for required period. Auto-reclosing relay.");
                 clear_hardware_trip();

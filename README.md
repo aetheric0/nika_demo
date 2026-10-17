@@ -18,14 +18,14 @@ Terra operates across three primary conceptual layers:
 ### The Terra/Nika Interlock Bridge
 ```mermaid
 graph TD
-    A[AUDITRON AI GATEWAY<br>(Vector Database / RAG)] -->| JSON Telemetry over Wi-Fi| B
-    B[TERRA APPLICATION LAYER<br>(Agronomic Sensors & Scheduling)]
+    A["AUDITRON AI GATEWAY<br>(Vector Database / RAG)"] -->|JSON Telemetry over Wi-Fi| B
+    B["TERRA APPLICATION LAYER<br>(Agronomic Sensors & Scheduling)"]
     B --> |Issues PUMP_START_REQUEST| C
     C --> |If APPROVED| D
     C --> |If VETOED| E
-    D[Physical Hardware Relay closes:<br>Pump activates.]
-    E[Relay remains open: <br>Alarm logged.]
-    F[PUMPS, VALVES & MICROGRID]
+    D["Physical Hardware Relay closes:<br>Pump activates."]
+    E["Relay remains open:<br>Alarm logged."]
+    F["PUMPS, VALVES & MICROGRID"]
     D --- F
     E --- F
 ```

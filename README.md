@@ -35,6 +35,7 @@ Subsystem | Primary Function | Monitored Metrics / Inputs | Actuation / Output
 Nika Core | Electrical and Mechanical Asset Protection | Vrms, Irms, Power Factor, THD | Hardware Relay Trip / Lockout
 Terra Engine | Agronomic Automation & Resource Optimization | Soil Moisture (VWC), Ambient Temp/RH Reservoir Levels | Solenoid Sector Valves, Pump Request Signals
 Auditron AI | Semantic RAG Audit & Diagnostic Intelligence | Ingested Operational JSON Payloads & Fault Logs | Vector Search, Natural Language Diagnostics
+
 *(Note): Enterprise high-density time-series synchronization is reserved for future integration via Synctron.*
 
 ## 3. Hardware & Sensor Interface Specification
@@ -105,8 +106,8 @@ This enables semantic retrieval and natural-langauge auditing over historical op
 
 ### Contributors & Presentation Team
 Presented at Jomo Kenyatta University of Agriculture & Technology (JKUAT) Inter-University Hackathon - 2026.
-➢ Team Lead: Chrix Eledu | chrixeledu@students.teau.ac.ke | Computer Science and IT (400 Level)
-➢ Team Member 2: Kaburia Dean Wamocho || Computer Science and IT (200 Level)
-➢ Team Member 3: Joseph Mamlin | Computer Science and IT (400 Level)
-➢ Team Member 4: Fiona Ndanu | Computer Science and IT (400 Level)
-➢ Team Member 5: Rebecca Ngakani | Computer Science and IT (400 Level)
+- **Team Lead**: Chrix Eledu | chrixeledu@students.teau.ac.ke | Computer Science and IT (400 Level)
+- **Team Member 2**: Kaburia Dean Wamocho || Computer Science and IT (200 Level)
+- **Team Member 3**: Joseph Mamlin | Computer Science and IT (400 Level)
+- **Team Member 4**: Fiona Ndanu | Computer Science and IT (400 Level)
+- **Team Member 5**: Rebecca Ngakani | Computer Science and IT (400 Level)

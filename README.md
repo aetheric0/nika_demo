@@ -31,6 +31,7 @@ graph TD
 ```
 ### Layer Responsibilities
 Subsystem | Primary Function | Monitored Metrics / Inputs | Actuation / Output
+----------|------------------|----------------------------|-------------------
 Nika Core | Electrical and Mechanical Asset Protection | Vrms, Irms, Power Factor, THD | Hardware Relay Trip / Lockout
 Terra Engine | Agronomic Automation & Resource Optimization | Soil Moisture (VWC), Ambient Temp/RH Reservoir Levels | Solenoid Sector Valves, Pump Request Signals
 Auditron AI | Semantic RAG Audit & Diagnostic Intelligence | Ingested Operational JSON Payloads & Fault Logs | Vector Search, Natural Language Diagnostics
@@ -41,6 +42,7 @@ The Terra edge stack executes on the ESP32-S3 microcontroller, leveraging its du
 
 ### Pin-to-Signal Map
 Signal Name | ESP32-S3 Pin | Driver / Protocol | Purpose
+------------|--------------|-------------------|--------
 `GPIO_RELAY_TRIP` | GPIO 4 | Digital Output | Low-level trigger for main power relay
 `GPIO_MANUAL_RESET` | GPIO 5 | Digital Input (Pull-up) | Technician HITL manual reset button
 `GPIO_STATUS_LED` | GPIO 2 | Digital Output | Operational state status LED
@@ -53,6 +55,7 @@ Signal Name | ESP32-S3 Pin | Driver / Protocol | Purpose
 
 ### Interlock Safety Veto Matrix
 Agronomic Request | Electrical / Mechanical State (Real-time Nika Audit) | Nika Interlock Decision | Action Taken
+------------------|------------------------------------------------------|-------------------------|-------------
 Pump START | Vrms = 220V, Irms = 0.0 A (Healthy) | **APPROVED** | Relay closes; Pump starts.
 Pump RUNNING | Irms < 0.8A for > 2 secs | **VETO / TRIP** | Undercurrent Detected (Dry Run). Relay opened.
 Pump START | Vrms < 195V (Brownout Sag) | **VETO / DENIED** | Relay remains open; Alarm logged.

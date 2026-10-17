@@ -17,8 +17,17 @@ extern "C" void app_main(void)
         return;
     }
 
-    // 2. Start analytics task
+    // 2. Initialize soil moisture sensor (GPIO 11 / ADC1_CH10)
+    if (!soil_sensor_init())
+    {
+        ESP_LOGE(TAG, "Soil sensor init failed!");
+    }
+
+    // 3. Start analytics task
     analytics_task_start();
+
+    // 4. Start Terra Irrigation Controller task (Core 1)
+    irrigation_task_start();
 
     while (true)
     {

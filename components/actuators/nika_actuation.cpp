@@ -214,3 +214,14 @@ void nika_evaluate_and_actuate(float v_rms, float i_rms, float power_factor, flo
             break;
     }
 }
+
+bool nika_request_pump_activation(void)
+{
+    if (g_system_state == STATE_TRIPPED_LOCKED || g_system_state == STATE_PERSISTENCE_EVAL)
+    {
+        return false;
+    }
+
+    // If operational and healthy, approve the request
+    return (g_system_state == STATE_OPERATIONAL && g_active_fault == SYSTEM_HEALTHY);
+}
